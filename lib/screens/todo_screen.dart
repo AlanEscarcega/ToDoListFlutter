@@ -19,9 +19,25 @@ class _TodoScreenState extends State<TodoScreen> {
     super.dispose();
   }
 
+  bool _existe(String texto, {Tarea? excepto}) {
+    return _tareas.any(
+      (t) => t != excepto && t.titulo.toLowerCase() == texto.toLowerCase(),
+    );
+  }
+
+  void _avisoRepetida() {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Esa tarea ya existe')));
+  }
+
   void _agregar() {
     final texto = _controller.text.trim();
     if (texto.isEmpty) return;
+    if (_existe(texto)) {
+      _avisoRepetida();
+      return;
+    }
     setState(() {
       _tareas.add(Tarea(titulo: texto));
       _controller.clear();
@@ -63,7 +79,13 @@ class _TodoScreenState extends State<TodoScreen> {
 
     editController.dispose();
 
+    if (!mounted) return;
+
     if (nuevoTexto != null && nuevoTexto.trim().isNotEmpty) {
+      if (_existe(nuevoTexto.trim(), excepto: tarea)) {
+        _avisoRepetida();
+        return;
+      }
       setState(() {
         tarea.titulo = nuevoTexto.trim();
       });
