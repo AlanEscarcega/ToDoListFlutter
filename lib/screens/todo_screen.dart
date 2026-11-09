@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_slidable/flutter_slidable.dart';
+import 'package:todolist_app/models/tarea.dart';
+import 'package:todolist_app/widgets/tarea_item.dart';
 
 class TodoScreen extends StatefulWidget {
   const TodoScreen({super.key});
@@ -10,7 +11,7 @@ class TodoScreen extends StatefulWidget {
 
 class _TodoScreenState extends State<TodoScreen> {
   final TextEditingController _controller = TextEditingController();
-  final List<String> _tareas = ['Tarea 1', 'Tarea 2', 'Tarea 3'];
+  final List<Tarea> _tareas = [];
 
   @override
   void dispose() {
@@ -22,19 +23,25 @@ class _TodoScreenState extends State<TodoScreen> {
     final texto = _controller.text.trim();
     if (texto.isEmpty) return;
     setState(() {
-      _tareas.add(texto);
+      _tareas.add(Tarea(titulo: texto));
       _controller.clear();
     });
   }
 
-  void _borrar(int index) {
+  void _borrar(Tarea tarea) {
     setState(() {
-      _tareas.removeAt(index);
+      _tareas.remove(tarea);
     });
   }
 
-  Future<void> _editar(int index) async {
-    final editController = TextEditingController(text: _tareas[index]);
+  void _cambiarEstado(Tarea tarea) {
+    setState(() {
+      tarea.completada = !tarea.completada;
+    });
+  }
+
+  Future<void> _editar(Tarea tarea) async {
+    final editController = TextEditingController(text: tarea.titulo);
 
     final nuevoTexto = await showDialog<String>(
       context: context,
@@ -58,7 +65,7 @@ class _TodoScreenState extends State<TodoScreen> {
 
     if (nuevoTexto != null && nuevoTexto.trim().isNotEmpty) {
       setState(() {
-        _tareas[index] = nuevoTexto.trim();
+        tarea.titulo = nuevoTexto.trim();
       });
     }
   }
@@ -67,7 +74,7 @@ class _TodoScreenState extends State<TodoScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('To Do List'),
+        title: const Text('Mis tareas'),
         centerTitle: true,
         backgroundColor: Theme.of(context).colorScheme.primaryContainer,
       ),
@@ -99,32 +106,12 @@ class _TodoScreenState extends State<TodoScreen> {
             child: ListView.builder(
               itemCount: _tareas.length,
               itemBuilder: (context, index) {
-                return Slidable(
-                  key: ValueKey('${_tareas[index]}-$index'),
-                  endActionPane: ActionPane(
-                    motion: const DrawerMotion(),
-                    children: [
-                      SlidableAction(
-                        onPressed: (_) => _editar(index),
-                        backgroundColor: Colors.orange,
-                        foregroundColor: Colors.white,
-                        icon: Icons.edit,
-                        label: 'Editar',
-                      ),
-                      SlidableAction(
-                        onPressed: (_) => _borrar(index),
-                        backgroundColor: Colors.red,
-                        foregroundColor: Colors.white,
-                        icon: Icons.delete,
-                        label: 'Borrar',
-                      ),
-                    ],
-                  ),
-                  child: ListTile(
-                    leading: const Icon(Icons.check_circle_outline),
-                    title: Text(_tareas[index]),
-                    trailing: const Icon(Icons.chevron_left),
-                  ),
+                final tarea = _tareas[index];
+                return TareaItem(
+                  tarea: tarea,
+                  onEditar: () => _editar(tarea),
+                  onBorrar: () => _borrar(tarea),
+                  onCambiar: () => _cambiarEstado(tarea),
                 );
               },
             ),
